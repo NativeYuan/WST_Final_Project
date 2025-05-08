@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Home Page</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+
+    <link rel="stylesheet" href="home_page.css">
+
+</head>
+
+<body class="home-page">
+
+    <!-- Navigation Bar -->
+    <nav>
+        <ul>
+            <li><a href="about_page.html">About</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <h1>MemberVerse Homepage</h1>
+            <p>Web Systems and Technologies 2</p>
+        </div>
+    </header>
+
+
+  <!-- Main Content Section -->
+<div id="member-dashboard" class="dashboard">
+  <h1><span class="highlight">Member</span>Verse Dashboard</h1>
+
+  <div class="card">
+
+    <div class="card-header">
+      <button id="add-btn">+ Add Member</button>
+    </div>
+
+    <table id="memberTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Join Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td colspan="5" class="no-members">
+            No members found. Add one to get started!
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="footer">A list of your members.</p>
+
+  </div>
+</div>
+  
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tableBody = document.querySelector("#memberTable tbody");
+    const addBtn = document.getElementById("add-btn");
+  
+    // 🟢 Add new row with input fields
+    addBtn.addEventListener("click", function () {
+      const row = document.createElement("tr");
+  
+      const idCell = document.createElement("td");
+      const nameCell = document.createElement("td");
+      const emailCell = document.createElement("td");
+      const dateCell = document.createElement("td");
+      const actionCell = document.createElement("td");
+  
+      const idInput = document.createElement("input");
+      const nameInput = document.createElement("input");
+      const emailInput = document.createElement("input");
+      const dateInput = document.createElement("input");
+      dateInput.type = "date";
+  
+      idCell.appendChild(idInput);
+      nameCell.appendChild(nameInput);
+      emailCell.appendChild(emailInput);
+      dateCell.appendChild(dateInput);
+  
+      const saveBtn = document.createElement("button");
+      saveBtn.textContent = "Save";
+      saveBtn.classList.add("save-btn");
+  
+      actionCell.appendChild(saveBtn);
+      row.append(idCell, nameCell, emailCell, dateCell, actionCell);
+      tableBody.appendChild(row);
+  
+      // 💾 Save to XML via create.php
+      saveBtn.addEventListener("click", function () {
+        const id = idInput.value.trim();
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const date = dateInput.value;
+  
+        if (!id || !name || !email || !date) {
+          alert("Please fill in all fields.");
+          return;
+        }
+  
+        fetch("create.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `id=${id}&name=${name}&email=${email}&joindate=${date}`
+        })
+        .then(res => res.text())
+        .then(response => {
+          if (response === "success") {
+            alert("Member added!");
+  
+            // Replace inputs with text
+            idCell.textContent = id;
+            nameCell.textContent = name;
+            emailCell.textContent = email;
+            dateCell.textContent = date;
+  
+            // Add edit and delete buttons
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "✏️";
+            editBtn.classList.add("edit-btn");
+  
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "🗑️";
+            deleteBtn.classList.add("delete-btn");
+  
+            actionCell.innerHTML = "";
+            actionCell.appendChild(editBtn);
+            actionCell.appendChild(deleteBtn);
+  
+            attachEditDelete(row);
+          } else if (response === "duplicate") {
+            alert("ID already exists!");
+          } else {
+            alert("Failed to save.");
+          }
+        });
+      });
+    });
+  
+    // ✏️ and 🗑️ Functions
+    function attachEditDelete(row) {
+      const editBtn = row.querySelector(".edit-btn");
+      const deleteBtn = row.querySelector(".delete-btn");
+  
+      // ✏️ Edit
+      editBtn.addEventListener("click", function () {
+        const cells = row.querySelectorAll("td");
+        const id = cells[0].textContent.trim();
+        const name = cells[1].textContent.trim();
+        const email = cells[2].textContent.trim();
+        const date = cells[3].textContent.trim();
+  
+        cells[1].innerHTML = `<input value="${name}">`;
+        cells[2].innerHTML = `<input value="${email}">`;
+        cells[3].innerHTML = `<input type="date" value="${date}">`;
+  
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.classList.add("save-btn");
+  
+        cells[4].innerHTML = "";
+        cells[4].appendChild(saveBtn);
+  
+        // 💾 Save Update
+        saveBtn.addEventListener("click", function () {
+          const nameVal = cells[1].querySelector("input").value.trim();
+          const emailVal = cells[2].querySelector("input").value.trim();
+          const dateVal = cells[3].querySelector("input").value;
+  
+          if (!nameVal || !emailVal || !dateVal) {
+            alert("Please fill in all fields.");
+            return;
+          }
+  
+          fetch("update.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `id=${id}&name=${nameVal}&email=${emailVal}&joindate=${dateVal}`
+          })
+          .then(res => res.text())
+          .then(response => {
+            if (response === "success") {
+              alert("Member updated!");
+  
+              cells[1].textContent = nameVal;
+              cells[2].textContent = emailVal;
+              cells[3].textContent = dateVal;
+  
+              const editBtnNew = document.createElement("button");
+              editBtnNew.textContent = "✏️";
+              editBtnNew.classList.add("edit-btn");
+  
+              const deleteBtnNew = document.createElement("button");
+              deleteBtnNew.textContent = "🗑️";
+              deleteBtnNew.classList.add("delete-btn");
+  
+              cells[4].innerHTML = "";
+              cells[4].appendChild(editBtnNew);
+              cells[4].appendChild(deleteBtnNew);
+  
+              attachEditDelete(row);
+            } else {
+              alert("Update failed.");
+            }
+          });
+        });
+      });
+  
+      // 🗑️ Delete
+      deleteBtn.addEventListener("click", function () {
+        const id = row.querySelector("td").textContent.trim();
+  
+        if (!confirm("Are you sure you want to delete this member?")) return;
+  
+        fetch("delete.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `id=${id}`
+        })
+        .then(res => res.text())
+        .then(response => {
+          if (response === "deleted") {
+            alert("Member deleted.");
+            row.remove();
+          } else {
+            alert("Delete failed.");
+          }
+        });
+      });
+    }
+  });
+  </script>
+  
+
+
+</body>
+
+</html>
